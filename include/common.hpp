@@ -13,7 +13,7 @@ public:
 
 public:
 	std::string dataset;
-	
+
 private:
 	Config();
 	~Config() {}
