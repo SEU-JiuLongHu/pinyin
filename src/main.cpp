@@ -8,7 +8,11 @@ using namespace pinyin;
 int main() {
 	PinYinTrie pinYinTrie;
 	pinYinTrie.Init();
-	pinYinTrie.ReadPinYins();
+	pinYinTrie.Build();
+	std::vector<std::string> res = pinYinTrie.SplitPinYin("tiananmen");
+	for (std::string t : res) {
+		std::cout << t << std::endl;
+	}
 	system("pause");
 	return 0;
 }
