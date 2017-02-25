@@ -68,7 +68,7 @@ std::map<std::string, double> HMMTable::QueryTransfer(std::string py, std::strin
 	sqlite3_stmt* stmt = NULL;
 	//std::vector<std::vector<std::string>> res;
 	std::map<std::string, double> res;
-	std::string sql = "SELECT t.behind, (e.probability + t.probability) FROM EMISSION e, TRANSITION t WHERE e.character==t.behind AND t.previous='" + chinese + "' AND e.pinyin='" + py + "' ORDER BY (e.probability + t.probability) DESC LIMIT 1;";
+	std::string sql = "SELECT t.behind, (e.probability + t.probability) FROM EMISSION e, TRANSITION t WHERE e.character==t.behind AND t.previous='" + chinese + "' AND e.pinyin='" + py + "' ORDER BY (e.probability + t.probability) DESC LIMIT 2;";
 	//std::cout << sql << std::endl;
 	const char* _sql = sql.c_str();
 	if (sqlite3_prepare_v2(this->pDB, _sql, -1, &stmt, &zTail) == SQLITE_OK) {

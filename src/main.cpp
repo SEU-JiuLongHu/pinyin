@@ -1,15 +1,14 @@
 #include <iostream>
+#include <fstream>
 #include "../include/common.hpp"
 #include "../include/hmm.hpp"
-#include <fstream>
+
 using namespace std;
 using namespace pinyin;
 
 int main() {
 	/*
 	PinYinTrie pinYinTrie;
-	pinYinTrie.Init();
-	pinYinTrie.Build();
 	std::vector<std::string> res = pinYinTrie.SplitPinYin("tiananmen");
 	for (std::string t : res) {
 		std::cout << t << std::endl;
@@ -29,14 +28,29 @@ int main() {
 	std::string pre = converter.to_bytes(wpre);
 	//std::map<std::string, double> res = hmmtable.QueryTransfer("ma", pre);
 
+	/*
+	std::map<std::string, double> r;
+	r["a"] = 1;
+	r["b"] = 2;
+	std::map<std::string, double> c;
+	c["c"] = 4;
+	c["d"] = 5;
+	r = c;
+	//r.insert(c.begin(), c.end());
+	for (auto const& pp : r) {
+		cout << pp.first << " " << pp.second << endl;
+	}
+	*/
+
 	HMM hmm;
-	std::map<std::string, double> res = hmm.PY2Chinese("tianlongbabu");
+	std::vector<std::pair<std::string, double>> res = hmm.PY2Chinese("fanganfangan");
 	for (auto const& pp: res) {
 		//std::string narrow = converter.to_bytes(wide_utf16_source_string);
 		//std::wstring wide = converter.from_bytes(res[i][j]);
 		//std::string t = PinyinConverter::UnicodeToUtf8(wide);
 		cout << pp.first << " " << pp.second << endl;
 	}
+	cout.close();
 	system("pause");
 	return 0;
 }
