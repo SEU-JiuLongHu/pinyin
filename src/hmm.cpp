@@ -1,5 +1,5 @@
+#include <iostream>
 #include "../include/hmm.hpp"
-#include "../include/hmmdb.hpp"
 #include "../include/common.hpp"
 
 using namespace std;
@@ -7,20 +7,17 @@ using namespace std;
 namespace pinyin {
 
 HMM::HMM() {
-	HMMTable hmmTable;
-	this->hmmTable = hmmTable;
-	PinYinTrie pyTrie;
-	this->pyTrie = pyTrie;
+	std::cout << "" << std::endl;
 }
 
 std::map<std::string, double> HMM::PY2Chinese(std::string pys) {
 	vector<std::string> splitPYs = this->pyTrie.SplitPinYin(pys);
-	vector<std::string> chineseRes;
+	std::map<std::string, double> chineseRes;
 	for (std::string py : splitPYs) {
 		std::map<std::string, double> _r = Viterbi(py);
-		chineseRes.insert(chineseRes.end(), _r.begin(), _r.end());
+		chineseRes.insert(_r.begin(), _r.end());
 	}
-
+	return chineseRes;
 }
 
 std::map<std::string, double> HMM::Viterbi(std::string py) {
@@ -40,7 +37,7 @@ std::map<std::string, double> HMM::Viterbi(std::string py) {
 				probM[character + _p.first] = _p.second + prob;
 			}
 		}
-		if (0 == probM.size) {
+		if (0 == probM.size()) {
 			return V;
 		} else {
 			V = probM;

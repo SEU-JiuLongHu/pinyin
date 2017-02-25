@@ -1,7 +1,7 @@
-#pragma once
 #include <codecvt>
 #include <locale>
 #include <string>
+#include <vector>
 
 using std::string;
 using std::wstring;

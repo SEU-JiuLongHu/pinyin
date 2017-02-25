@@ -12,11 +12,6 @@ HMMTable::HMMTable() {
 	this->ConnectDB();
 }
 
-HMMTable& HMMTable::operator=(const HMMTable h) {
-	this->pDB = h.pDB;
-	return *this;
-}
-
 HMMTable::~HMMTable() {
 	this->DisConnectDB();
 }

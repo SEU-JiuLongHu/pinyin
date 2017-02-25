@@ -10,7 +10,6 @@ namespace pinyin {
 class HMMTable {
 public:
 	HMMTable();
-	HMMTable& operator=(const HMMTable);
 	~HMMTable();
 	
 	std::map<std::string, double> QueryStarting(std::string);

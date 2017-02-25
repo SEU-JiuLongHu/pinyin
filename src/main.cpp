@@ -1,7 +1,6 @@
 #include <iostream>
 #include "../include/common.hpp"
-#include "../include/pyt.hpp"
-#include "../include/hmmdb.hpp"
+#include "../include/hmm.hpp"
 #include <fstream>
 using namespace std;
 using namespace pinyin;
@@ -16,25 +15,27 @@ int main() {
 		std::cout << t << std::endl;
 	}
 	*/
-	ifstream cin("in.txt");
+	
+	//ifstream cin("in.txt");
 	ofstream cout("out.txt");
-	HMMTable hmmtable;
+	//HMMTable hmmtable;
 	
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	std::wstring wpre(L"Íõ");
-	std::string pre = converter.to_bytes(wpre);
+	//std::map<std::string, double> res = hmmtable.QueryStarting("xie");	
 	
-	//std::vector<std::vector<std::string>> res = hmmtable.QueryStarting("xie");
 	//std::wstring _wstr ("");
-	std::vector<std::vector<std::string>> res = hmmtable.QueryTransfer("ba", pre);
-	for (size_t i = 0; i < res.size(); i++) {
-		for (size_t j = 0; j < res[i].size(); j++) {
-			//std::string narrow = converter.to_bytes(wide_utf16_source_string);
-			//std::wstring wide = converter.from_bytes(res[i][j]);
-			//std::string t = PinyinConverter::UnicodeToUtf8(wide);
-			cout << res[i][j].c_str() << " ";
-		}
-		cout << std::endl;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring wpre(L"°Ö");
+	
+	std::string pre = converter.to_bytes(wpre);
+	//std::map<std::string, double> res = hmmtable.QueryTransfer("ma", pre);
+
+	HMM hmm;
+	std::map<std::string, double> res = hmm.PY2Chinese("tianlongbabu");
+	for (auto const& pp: res) {
+		//std::string narrow = converter.to_bytes(wide_utf16_source_string);
+		//std::wstring wide = converter.from_bytes(res[i][j]);
+		//std::string t = PinyinConverter::UnicodeToUtf8(wide);
+		cout << pp.first << " " << pp.second << endl;
 	}
 	system("pause");
 	return 0;

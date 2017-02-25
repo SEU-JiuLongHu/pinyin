@@ -6,7 +6,10 @@
 
 namespace pinyin {
 
-PinYinTrie::PinYinTrie() {}
+PinYinTrie::PinYinTrie() {
+	this->Init();
+	this->Build();
+}
 PinYinTrie::~PinYinTrie() {}
 
 void PinYinTrie::Init() {
