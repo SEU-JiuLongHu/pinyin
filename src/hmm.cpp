@@ -48,7 +48,20 @@ std::map<std::string, double> HMM::Viterbi(std::string py) {
 			}
 		}
 		if (0 == probM.size()) {
-			return V;
+			// if no transfer
+			// restart from current pinyin
+			std::string _py;
+			for (size_t j = i; j < elems.size(); j++) {
+				_py += elems[j];
+			}
+			std::map<std::string, double> rV = Viterbi(_py);
+			std::map<std::string, double> finalV;
+			for (auto const& _pp : V) {
+				for (auto const& rpp : rV) {
+					finalV[_pp.first + rpp.first] = _pp.second + rpp.second;
+				}
+			}
+			return finalV;
 		} else {
 			V = probM;
 		}
