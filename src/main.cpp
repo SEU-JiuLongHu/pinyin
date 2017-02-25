@@ -43,7 +43,7 @@ int main() {
 	*/
 
 	HMM hmm;
-	std::vector<std::pair<std::string, double>> res = hmm.PY2Chinese("changjiangnihao");
+	std::vector<std::pair<std::string, double>> res = hmm.PY2Chinese("wohenkuaile");
 	for (auto const& pp: res) {
 		//std::string narrow = converter.to_bytes(wide_utf16_source_string);
 		//std::wstring wide = converter.from_bytes(res[i][j]);

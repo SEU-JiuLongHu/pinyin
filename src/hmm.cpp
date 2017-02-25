@@ -50,8 +50,9 @@ std::map<std::string, double> HMM::Viterbi(std::string py) {
 		if (0 == probM.size()) {
 			// if no transfer
 			// restart from current pinyin
-			std::string _py;
-			for (size_t j = i; j < elems.size(); j++) {
+			std::string _py = elems[i];
+			for (size_t j = i + 1; j < elems.size(); j++) {
+				_py += "+";
 				_py += elems[j];
 			}
 			std::map<std::string, double> rV = Viterbi(_py);
