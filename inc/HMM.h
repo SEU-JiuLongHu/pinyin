@@ -7,27 +7,40 @@
 #include <fstream>
 #include <string>
 #include <cassert>
-#include "Query.h"
+#include <algorithm>
+#include "type.h"
 using namespace std;
-//struct State2State
-//{
-//	int32_t state;
-//	uint32_t cnt;
-//	State2State(int32_t s, uint32_t c) :state(0), cnt(0) {};
-//	bool operator() (const State2State &t) const
-//	{
-//		return state < t.state;
-//	}
-//};
-struct Observed2State
+struct MatrixNode
 {
-	int32_t state;
-	uint32_t cnt;
-	Observed2State(int32_t s, uint32_t c) :state(0), cnt(0) {};
-	bool operator() (const Observed2State &t) const
+	//stat: state id
+	state stat;
+	probability logp;
+	//pre: record the previous state id which constitute the optimal path
+	state pre;
+	MatrixNode(state a = 0, probability b = numeric_limits<probability>::lowest()) :stat(a), logp(b) {};
+};
+typedef vector<MatrixNode> MatrixLayer;
+typedef vector<MatrixLayer> Matrix;
+
+struct HashFunc
+{
+	uint32_t operator()(const id_pair &key) const 
 	{
-		return state < t.state;
+		return hash<id>()(key.first)^hash<id>()(key.second);
 	}
+};
+struct Collision
+{
+	bool operator() (const id_pair &lhs, const id_pair &rhs)
+	{
+		return (HashFunc()(lhs) == HashFunc()(rhs));
+	}
+};
+struct Res
+{
+	probability prob;
+	wstring str;
+	Res(probability p) :prob(p) {};
 };
 class HMM
 {
@@ -38,31 +51,34 @@ public:
 	//vector tokenizer(vector<wstring> input);
 	bool loadCorpus(string corpusPath);
 	bool loadPinyinCharMap(string mapPath);
-	void insertMapRelations(string pinyin, wstring chars);
-	void addCharacters(wstring characters,int cnt);
-	void addChar2Char(wchar_t char1,wchar_t char2,int cnt);
-	void addChar(wchar_t character,int cnt);
-	size_t getPinyinIdFromCharId(size_t charId);
-	size_t getPinyinIdFromPinyin(string pinyin);
-	size_t getCharIdFromChar(wchar_t character);
-	size_t getCharIdFromPinyinId(size_t pinyinId);
-	void touchPinyinCharMap(size_t pinyinId, size_t charId);
-	void addToPinyinCharMap(string pinyin,wstring chars);
-	vector<Query> query(vector<string> pinyins);
+	void insert_PyChar_Relations(string pinyin, wstring chars);
+	//void addCharacters(wstring characters,int cnt);
+	//void addChar2Char(wchar_t char1,wchar_t char2,int cnt);
+	//void addChar(wchar_t character,int cnt);
+	//size_t getPinyinIdFromCharId(size_t charId);
+	//size_t getPinyinIdFromPinyin(string pinyin);
+	//size_t getCharIdFromChar(wchar_t character);
+	//size_t getCharIdFromPinyinId(size_t pinyinId);
+	//void touchPinyinCharMap(size_t pinyinId, size_t charId);
+	//void addToPinyinCharMap(string pinyin,wstring chars);
+	id get_charid(wchar_t ch);
+	id get_pyid(string py);
+	void add_char(wchar_t ch, uint32_t cnt);
+	void add_chars(wstring chs, uint32_t cnt);
+	vector<Res> query(vector<string> py,uint32_t topk);
+	vector<Res> solve(uint32_t topk);
 private:
-	vector<map<int32_t,uint32_t> > stateTransfers;
-	vector<uint32_t> cntStateTransferOut;
-	vector<vector<Observed2State> > observedTransfer;
-	vector<int> charOccr; //single char occurence num
-	vector<int> pinyinOccr; //single pinyin occurence num
-	map<wchar_t, uint32_t> word2id;
-	map<string, uint32_t> pinyin2id;
-	vector<wchar_t> id2word;
-	vector<string> id2pinyin;
-	vector<set<uint32_t>> pinyinId2charsId;
-	vector<uint32_t> charId2PinyinId;//ÉÐÎ´¿¼ÂÇ¶àÒô×Ö
-private:
-	vector<Query> Viterbi(vector<uint32_t> pinyinIds);
-	uint32_t search(int deep, vector<uint32_t> &pyids,map<uint32_t,double> lastlayer,vector<uint32_t> &state);
+	unordered_map<wchar_t, id> char2id;
+	unordered_map<id, wchar_t> id2char;
+	unordered_map<string, id> py2id;
+	unordered_map<id, string> id2py;
+
+	unordered_map<id,uint32_t> transf_out;
+	unordered_map<id_pair, uint32_t,HashFunc> transf_to;
+	unordered_map<id, uint32_t> char_freq;
+	unordered_map<id, uint32_t> py_freq;
+	unordered_map<id, id_list> pyid2charidlst;//map pingyinid into charid list 
+	//ViterbiMatrix viterbi;
+	Matrix matrix;
 };
 

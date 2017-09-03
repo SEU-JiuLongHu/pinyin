@@ -1,18 +1,10 @@
 #include "HMM.h"
 #include "PinyinConverter.h"
-#define _check_vector_size(x) if (x.size()>x.capacity()*0.5) x.reserve(2*x.size());
+//#define _check_vector_size(x) if (x.size()>x.capacity()*0.5) x.reserve(2*x.size());
 HMM::HMM()
 {
 #ifdef DEBUG
-	stateTransfers.reserve(30000);
-	observedTransfer.reserve(1000);
-	charOccr.reserve(30000);
-	pinyinOccr.reserve(1000);
-	id2word.reserve(30000);
-	id2pinyin.reserve(1000);
-	pinyinId2charsId.reserve(1000);
-	charId2PinyinId.reserve(1000);
-	cntStateTransferOut.reserve(30000);
+
 #endif // DEBUG
 }
 
@@ -31,24 +23,54 @@ bool HMM::loadCorpus(string corpus)
 	ifstream fin(corpus);
 	if (fin)
 	{
-		string wordUtf8;
+		//std::ios::sync_with_stdio(false);
+		string wordUtf8,pinyin;
 		wstring wordUnicode;
-		int cnt;
-		while (fin >> wordUtf8 >> cnt)
+		uint32_t cnt;
+		while (fin >> wordUtf8)
 		{
-
 			wordUnicode = PinyinConverter::Utf8ToUnicode(wordUtf8);
-			
+			for (size_t i = 0; i < wordUnicode.size(); i++)
+			{
+				fin >> pinyin;
+			}
+			fin >> cnt;
 			if (wordUnicode.size() > 1)
-				addCharacters(wordUnicode, cnt);
+				add_chars(wordUnicode, cnt);
 			else if (wordUnicode.size() == 1)
-				addChar(wordUnicode[0], cnt);
+				add_char(wordUnicode[0], cnt);
 			else continue;
 		}
 		return true;
 	}
 	else
 		return false;
+}
+id HMM::get_charid(wchar_t ch)
+{
+	auto iter= char2id.find(ch);
+	if (iter == char2id.end())
+	{
+		id charid = char2id.size();
+		char2id[ch] = charid;
+		id2char[charid] = ch;
+		return charid;
+	}
+	else
+		return (*iter).second;
+}
+id HMM::get_pyid(string py)
+{
+	auto iter = py2id.find(py);
+	if (iter == py2id.end())
+	{
+		id pyid = py2id.size();
+		py2id[py] = pyid;
+		id2py[pyid] = py;
+		return pyid;
+	}
+	else
+		return (*iter).second;
 }
 bool HMM::loadPinyinCharMap(string mapPath)
 {
@@ -61,7 +83,7 @@ bool HMM::loadPinyinCharMap(string mapPath)
 		while (fin >> pinyin >> wordsUtf8)
 		{
 			chars = PinyinConverter::Utf8ToUnicode(wordsUtf8);
-			insertMapRelations(pinyin, chars);
+			insert_PyChar_Relations(pinyin, chars);
 		}
 		return true;
 	}
@@ -69,194 +91,110 @@ bool HMM::loadPinyinCharMap(string mapPath)
 		return false;
 }
 //建立拼音id与字id之间的映射关系
-void HMM::insertMapRelations(string pinyin, wstring chars)
+void HMM::insert_PyChar_Relations(string pinyin, wstring chars)
 {
-	size_t pinyinId, charId;
-	pinyinId = getPinyinIdFromPinyin(pinyin);
-	_check_vector_size(pinyinId2charsId);
-	while (pinyinId >= pinyinId2charsId.size())
-		pinyinId2charsId.push_back(set<uint32_t>());
-	for (size_t i = 0; i < chars.size(); i++)
+	id pyid=get_pyid(pinyin);
+	if (pyid2charidlst.find(pyid) == pyid2charidlst.end())
+		pyid2charidlst[pyid] = id_list();
+	for (auto &ch : chars )
 	{
-		charId = getCharIdFromChar(chars[i]);
-		_check_vector_size(charId2PinyinId);
-		while (charId >= charId2PinyinId.size()) charId2PinyinId.push_back(0);
-		charId2PinyinId[charId] = pinyinId;
-		_check_vector_size(pinyinId2charsId);
-		while (pinyinId >= pinyinId2charsId.size()) pinyinId2charsId.push_back(set<uint32_t>());
-		pinyinId2charsId[pinyinId].insert(charId);
+		id charid = get_charid(ch);
+		pyid2charidlst[pyid].push_back(charid);
 	}
-}
-void HMM::addChar2Char(wchar_t char1, wchar_t char2, int cnt)
-{
-	size_t id1 = getCharIdFromChar(char1),id2= getCharIdFromChar(char2);
-	stateTransfers[id1][id2] += cnt;
-	cntStateTransferOut[id1] += cnt;
-	//
-	//addChar(char1, cnt);
-	//addChar(char2, cnt);
-}
-void HMM::addChar(wchar_t character, int cnt)
-{
-	size_t id = getCharIdFromChar(character);
-	charOccr[id] += cnt;
-	size_t pyId = getPinyinIdFromCharId(id);
-	pinyinOccr[pyId] += cnt;
+
 }
 
-size_t HMM::getPinyinIdFromCharId(size_t charId)
+void HMM::add_char(wchar_t ch, uint32_t cnt)
 {
-	assert(charId<charId2PinyinId.size());
-	return charId2PinyinId[charId];
+	id i = get_charid(ch);
+	char_freq[i] += cnt;
 }
 
-size_t HMM::getPinyinIdFromPinyin(string pinyin)
+void HMM::add_chars(wstring chs, uint32_t cnt)
 {
-	if (pinyin2id.find(pinyin) == pinyin2id.end())
+	wchar_t pre;
+	for (auto iter=chs.begin();iter!=chs.end();iter++)
 	{
-		pinyin2id[pinyin] = pinyin2id.size();
-		_check_vector_size(id2pinyin);
-		id2pinyin.push_back(pinyin);
-		_check_vector_size(pinyinOccr);
-		while (pinyinOccr.size() < pinyin2id.size())
-			pinyinOccr.push_back(0);
-		return pinyin2id.size() - 1;
-	}
-	else
-		return pinyin2id[pinyin];
-}
-
-size_t HMM::getCharIdFromChar(wchar_t character)
-{
-	if (word2id.find(character) == word2id.end())
-	{
-		word2id[character]= word2id.size();
-		id2word.push_back(character);
-		if (stateTransfers.size() < word2id.size())
+		if (iter != chs.begin())
 		{
-			stateTransfers.push_back(map<int32_t, uint32_t>());
-			cntStateTransferOut.push_back(0);
+			id i = get_charid(pre);
+			id ii = get_charid(*iter);
+			id_pair pair = make_pair(i, ii);
+			transf_to[pair] += cnt;
+			transf_out[i] += cnt;
 		}
-		if (charOccr.size() < word2id.size())
-			charOccr.push_back(0);
-		return word2id.size() - 1;
+		pre = *iter;
+		add_char(pre,cnt);
 	}
-	else
-		return word2id[character];
 }
 
-size_t HMM::getCharIdFromPinyinId(size_t pinyinId)
+vector<Res> HMM::query(vector<string> pinyins,uint32_t topk)
 {
-	return size_t();
-}
-
-void HMM::touchPinyinCharMap(size_t pinyinId, size_t charId)
-{
-	//pinyinId2charsId.size();
-
-
-	//
-}
-
-void HMM::addToPinyinCharMap(string pinyin, wstring chars)
-{
-	//int pinyinId = getPinyinIdFromPinyin(pinyin);
-	//int charId;
-	//for (size_t i = 0; i < chars.size(); i++)
-	//{
-	//	charId = getCharIdFromChar(chars[i]);
-	//	touchPinyinCharMap(pinyinId, charId);
-	//}
-}
-
-vector<Query> HMM::query(vector<string> pinyins)
-{
-	vector<uint32_t> ids;
-	for (size_t i = 0; i < pinyins.size(); i++)
+	matrix.clear();
+	matrix.resize(pinyins.size());
+	for (size_t i=0;i<pinyins.size();i++)
 	{
-		if (pinyin2id.find(pinyins[i]) == pinyin2id.end())
-			throw string("不含该拼音");
-		else
-			ids.push_back(pinyin2id[pinyins[i]]);
-	}
-
-	return Viterbi(ids);
-}
-vector<Query> HMM::Viterbi(vector<uint32_t> pinyinIds)
-{
-	double maxProb=0,currProb=1;
-	vector<uint32_t> states(pinyinIds.size());
-	search(0, pinyinIds,map<uint32_t,double>(),states);
-	wstring ans;
-	for (size_t i = 0; i < states.size(); i++)
-		ans+=id2word[states[i]];
-	ofstream fo("out.txt");
-	fo << PinyinConverter::UnicodeToUtf8(ans);
-	fo.close();
-	return vector<Query>();
-}
-uint32_t HMM::search(int deep,vector<uint32_t> &pyids,map<uint32_t,double> lastlayer,vector<uint32_t> &result)
-{
-	if (deep >= pyids.size())
-	{
-		uint32_t maxProbState;
-		double p = 0;
-		for (map<uint32_t,double>::iterator i=lastlayer.begin();i!=lastlayer.end();i++)
+		string py = pinyins[i];
+		id pyid = py2id[py];
+		auto charidlst = pyid2charidlst[pyid];
+		size_t charsize = charidlst.size();
+		matrix[i].resize(charsize);
+		/*
+		没有多音字，暂时使用字符的频率和计算第一个字的概率
+		*/
+		int sum = 0;
+		for (size_t j = 0; j < charsize; j++)
 		{
-			if ((*i).second > p)
+			state curstat = charidlst[j];
+			sum += char_freq[curstat];
+		}
+		for (size_t j = 0; j < charsize; j++)
+		{
+			state curstat = charidlst[j];
+			matrix[i][j] = MatrixNode(curstat);
+			if (!i)
 			{
-				maxProbState = (*i).first;
-				p = (*i).second;
+				matrix[i][j].logp = log(1.0*(char_freq[curstat]+1) / (sum+charsize));
 			}
-		}
-		return maxProbState;
-	}
-	//auto max = [](const double &a, const double &b) {return a > b; };
-	map<uint32_t, double> currlayer;
-	if (!deep)
-	{
-		double pstate2observed;
-		for (set<uint32_t>::iterator i = pinyinId2charsId[pyids[deep]].begin(); i != pinyinId2charsId[pyids[deep]].end(); i++)
-		{
-				pstate2observed =double (charOccr[*i] + 1) / (pinyinOccr[pyids[deep]] + pinyinId2charsId[pyids[deep]].size());
-				currlayer[*i] = pstate2observed;
-		}
-		int maxProbstate=search(deep + 1, pyids,currlayer, result);
-		result[deep] = maxProbstate;
-		return 0;
-	}
-	else
-	{
-		double pstate2observed, pstate2state;
-		uint32_t currstate, prestate;
-		map<uint32_t, uint32_t> maxProbPre;
-		for (set<uint32_t>::iterator i = pinyinId2charsId[pyids[deep]].begin(); i != pinyinId2charsId[pyids[deep]].end(); i++)
-		{
-			currstate = *i;
-			currlayer[currstate] = 0;
-			for (map<uint32_t, double>::iterator j = lastlayer.begin(); j != lastlayer.end(); j++)
+			else
 			{
-				prestate = (*j).first;
-				//pstate2observed =double (charOccr[*i] + 1) / (pinyinOccr[pyids[deep]] + pinyinId2charsId[pyids[deep]].size());
-				pstate2observed = 1;
-				pstate2state = double(stateTransfers[prestate][currstate] + 1) / (cntStateTransferOut[prestate] + stateTransfers[prestate].size());
-				if (lastlayer[prestate] * pstate2state*pstate2observed > currlayer[currstate])
+				state prestat;
+				probability prob;
+				for (size_t k = 0; k < matrix[i - 1].size(); k++)
 				{
-					currlayer[currstate] = lastlayer[prestate] * pstate2state*pstate2observed;
-					maxProbPre[currstate] = prestate;
+					prestat = matrix[i - 1][k].stat;
+					prob = matrix[i - 1][k].logp + log(1.0*(transf_to[make_pair(prestat, curstat)]+1) / (transf_out[prestat]+ char2id.size()));
+					if (prob > matrix[i][j].logp)
+					{
+						matrix[i][j].logp = prob;
+						matrix[i][j].pre = k;
+					}
 				}
 			}
 		}
-		int maxProbstate=search(deep + 1, pyids,currlayer, result);
-		result[deep] = maxProbstate;
-		return maxProbPre[maxProbstate];
 	}
-
+	return solve(topk);
 }
-void HMM::addCharacters(wstring word, int cnt)
+vector<Res> HMM::solve(uint32_t topk)
 {
-	for (int i = 0; i < word.size() - 1; i++)
+	static auto cmp = [](const MatrixNode &a, const MatrixNode &b) {
+		return a.logp > b.logp;
+	};
+	assert(matrix.size()>0);
+	uint32_t L = matrix.size() - 1;
+	sort(matrix[L].begin(), matrix[L].end(), cmp);
+	vector<Res> records;
+	for (int i = 0; i < min(topk,matrix[L].size()); i++)
 	{
-		addChar2Char(word[i], word[i + 1], cnt);
+		int cur=i;
+		Res record(matrix[L][i].logp);
+		for (int j = L; j >=0 ; j--)
+		{
+			record.str.push_back(id2char[matrix[j][cur].stat]);
+			cur = matrix[j][cur].pre;
+		}
+		reverse(record.str.begin(), record.str.end());
+		records.push_back(record);
 	}
+	return records;
 }

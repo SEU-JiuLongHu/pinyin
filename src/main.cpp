@@ -1,18 +1,25 @@
 #include <iostream>
-#include "../include/common.hpp"
-#include "../include/pyt.hpp"
-
+#include <fstream>
+#include "HMM.h"
 using namespace std;
-using namespace pinyin;
 
 int main() {
-	PinYinTrie pinYinTrie;
-	pinYinTrie.Init();
-	pinYinTrie.Build();
-	std::vector<std::string> res = pinYinTrie.SplitPinYin("tiananmen");
-	for (std::string t : res) {
-		std::cout << t << std::endl;
+
+	HMM hmm;
+	//system("dir");
+	ifstream fi("in.txt");
+	string tmp;
+	fi >> tmp;
+	if (hmm.loadPinyinCharMap("F:\\Github\\pinyin\\py2word.txt"))
+	{
+		if (hmm.loadCorpus("F:\\Github\\pinyin\\corpus.txt"))
+		{
+			hmm.query(vector<string>{"mei","you","an","zhuang","qiao"},10);
+			cout << "done" << endl;
+		}
 	}
+
+	//cout << numeric_limits<double>().lowest() << endl;
 	system("pause");
 	return 0;
 }
