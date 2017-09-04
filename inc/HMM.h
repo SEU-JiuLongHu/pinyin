@@ -61,4 +61,3 @@ private:
 
 	static const map<string, wstring> pinyin2chars;
 };
-

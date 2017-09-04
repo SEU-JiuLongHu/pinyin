@@ -9,9 +9,8 @@ HMM::HMM()
 
 HMM::HMM(string corpus)
 {
-	
-
 	init_pinyin2chars_table();
+	loadCorpus(corpus);
 }
 HMM::~HMM()
 {
@@ -103,11 +102,6 @@ void HMM::add_chars(wchar_t character1,string pinyin1,wchar_t character2,string 
 	id ch1 = get_charid(character1),ch2=get_charid(character2);
 	id py1 = get_pyid(pinyin1), py2 = get_pyid(pinyin2);
 	Key key1(py1, ch1), key2(py2, ch2);
-	if (pinyin1 == "jiu"&&pinyin2 == "sheng")
-	{
-		int gc=0;
-		gc++;
-	}
 	transf_to[make_pair(key1, key2)] += cnt;
 	transf_out[key1] += cnt;
 }
@@ -150,12 +144,11 @@ vector<Res> HMM::query(vector<string> pinyins,uint32_t topk)
 #else // DEBUG
 					Key prekey(preobser, prestat);
 #endif							
-					int test0 = transf_to[make_pair(prekey, curkey)];
+					/*int test0 = transf_to[make_pair(prekey, curkey)];
 					int test1 = transf_out[prekey];
-					probability p1 = matrix[i - 1][k].logp,p2= log(1.0*(transf_to[make_pair(prekey, curkey)] + 1) / (transf_out[prekey] + charsize));
+					probability p1 = matrix[i - 1][k].logp,p2= log(1.0*(transf_to[make_pair(prekey, curkey)] + 1) / (transf_out[prekey] + charsize));*/
 
-					prob = matrix[i - 1][k].logp + log(1.0*(transf_to[make_pair(prekey, curkey)] + 1) / (transf_out[prekey] + charsize));
-					//+log(1.0*(emit_to[make_pair(curstat, curobser)]) / emit_out[curstat]);
+					prob = matrix[i - 1][k].logp + log(1.0*(transf_to[make_pair(prekey, curkey)] + 1) / (transf_out[prekey] + charsize))+log(1.0*(emit_to[make_pair(curstat, curobser)]+1) / (emit_out[curstat]+1));
 					if (prob > matrix[i][j].logp)
 					{
 						matrix[i][j].logp = prob;
