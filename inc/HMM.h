@@ -8,37 +8,14 @@
 #include <string>
 #include <cassert>
 #include <algorithm>
+#include <sstream>
 #include "type.h"
 using namespace std;
-struct MatrixNode
-{
-	//stat: state id
-	state stat;
-	probability logp;
-	//pre: record the previous state id which constitute the optimal path
-	state pre;
-	MatrixNode(state a = 0, probability b = numeric_limits<probability>::lowest()) :stat(a), logp(b) {};
-};
-typedef vector<MatrixNode> MatrixLayer;
-typedef vector<MatrixLayer> Matrix;
+using namespace type;
 
-struct HashFunc
-{
-	uint32_t operator()(const id_pair &key) const 
-	{
-		return hash<id>()(key.first)^hash<id>()(key.second);
-	}
-};
-struct Collision
-{
-	bool operator() (const id_pair &lhs, const id_pair &rhs)
-	{
-		return (HashFunc()(lhs) == HashFunc()(rhs));
-	}
-};
 struct Res
 {
-	probability prob;
+	type::probability prob;
 	wstring str;
 	Res(probability p) :prob(p) {};
 };
@@ -50,35 +27,38 @@ public:
 	~HMM();
 	//vector tokenizer(vector<wstring> input);
 	bool loadCorpus(string corpusPath);
-	bool loadPinyinCharMap(string mapPath);
-	void insert_PyChar_Relations(string pinyin, wstring chars);
-	//void addCharacters(wstring characters,int cnt);
-	//void addChar2Char(wchar_t char1,wchar_t char2,int cnt);
-	//void addChar(wchar_t character,int cnt);
-	//size_t getPinyinIdFromCharId(size_t charId);
-	//size_t getPinyinIdFromPinyin(string pinyin);
-	//size_t getCharIdFromChar(wchar_t character);
-	//size_t getCharIdFromPinyinId(size_t pinyinId);
-	//void touchPinyinCharMap(size_t pinyinId, size_t charId);
-	//void addToPinyinCharMap(string pinyin,wstring chars);
+	
 	id get_charid(wchar_t ch);
 	id get_pyid(string py);
-	void add_char(wchar_t ch, uint32_t cnt);
-	void add_chars(wstring chs, uint32_t cnt);
+	void add_char(wchar_t ch, string pinyin, type::count cnt);
+	void add_chars(wchar_t character1, string pinyin1, wchar_t character2, string pinyin2, type::count cnt);
 	vector<Res> query(vector<string> py,uint32_t topk);
 	vector<Res> solve(uint32_t topk);
+private:
+	void init_pinyin2chars_table();
+	void insert_pychar_relations(string pinyin, wstring chars);
 private:
 	unordered_map<wchar_t, id> char2id;
 	unordered_map<id, wchar_t> id2char;
 	unordered_map<string, id> py2id;
 	unordered_map<id, string> id2py;
 
-	unordered_map<id,uint32_t> transf_out;
-	unordered_map<id_pair, uint32_t,HashFunc> transf_to;
-	unordered_map<id, uint32_t> char_freq;
-	unordered_map<id, uint32_t> py_freq;
+	//用来计算转移概率
+	unordered_map<Key, type::count, HashKey> transf_out;
+	unordered_map<Key_pair, type::count, HashKeyPair> transf_to; 
+
+	//用来计算初始概率
+	unordered_map <Key, type::count, HashKey > char_freq;//the count of a char given the pinyin
+	unordered_map <id, type::count> py_freq;//the count of the pinyin
+
+	//用来计算发射概率
+	unordered_map<id_pair, type::count, HashIdPair> emit_to;//从字转移到拼音的数量
+	unordered_map<id, type::count> emit_out;//字的数量
+	
 	unordered_map<id, id_list> pyid2charidlst;//map pingyinid into charid list 
 	//ViterbiMatrix viterbi;
 	Matrix matrix;
+
+	static const map<string, wstring> pinyin2chars;
 };
 
