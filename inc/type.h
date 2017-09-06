@@ -78,4 +78,11 @@ namespace type {
 	};
 	typedef vector<MatrixNode> MatrixLayer;
 	typedef vector<MatrixLayer> Matrix;
+
+
+	struct pRes
+	{
+		wchar_t *str;
+		double score;
+	};
 }

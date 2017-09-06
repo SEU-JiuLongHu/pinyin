@@ -59,5 +59,5 @@ private:
 	//ViterbiMatrix viterbi;
 	Matrix matrix;
 
-	static const map<string, wstring> pinyin2chars;
+	static const unordered_map<string, wstring> pinyin2chars;
 };

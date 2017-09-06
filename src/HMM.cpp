@@ -170,7 +170,7 @@ vector<Res> HMM::solve(uint32_t topk)
 	uint32_t L = matrix.size() - 1;
 	sort(matrix[L].begin(), matrix[L].end(), cmp);
 	vector<Res> records;
-	for (int i = 0; i < min(topk,matrix[L].size()); i++)
+	for (int i = 0; i < min((size_t)topk,matrix[L].size()); i++)
 	{
 		int cur=i;
 		Res record(matrix[L][i].logp);
@@ -189,7 +189,7 @@ void HMM::init_pinyin2chars_table()
 	for (auto iter = pinyin2chars.begin(); iter != pinyin2chars.end(); iter++)
 		insert_pychar_relations((*iter).first,(*iter).second);	
 }
-const map<string, wstring> HMM::pinyin2chars = {
+const unordered_map<string, wstring> HMM::pinyin2chars = {
 	{ "a",L"àÄ°¡åHï¹ß¹ºÇ°¢ëç" },
 	{ "ai",L"°¨°¥V‹Ü°§è¨š±êqËB‘°ñLğgšGƒù°®ïÍÌ‡BàÉ°£”±ˆì•lŸs°¦­a°¬ìa´o°¤°ŠèPŠâœâæXæÈƒvÙŒ°}ŠÖ‡†éu³}òIö°‰¹Üt”²êÓ°«êi°ª°©œÜëB´Ì@…¥†ì\àÈ‰a²}Şß×cá{íÁ³v•á°¯øµKG°­‘¹Û×r…Ù½i" },
 	{ "an",L"°²±Vˆ¥°°Øtƒ‡ëˆ«q^†±ŒåğÆÚÏÁOŞîóì”Éë@áí›¡õc°·…{°³÷öí™±Q°¸ÈCˆù“°¶ˆİ°µä@åBéœñKîO´UÇIùg°±ÑsÄWÕY‹jV†HÈ€‹Fí°´âÖÖOèñ††Ès¹ãï§••³§¯uØÛû" },
@@ -583,3 +583,5 @@ const map<string, wstring> HMM::pinyin2chars = {
 	{ "zhuan",L"ÂZ`ŞDƒQÖKÉEÀ»Mãç×«ò§×¬şz„–‰tŒNâÍ®UÙ´s‡Ê×­ƒ]´u×ª¬ƒ…¡÷HÒNº‹Ïm¿x×©×¨àî…ºeÄxºiˆæ´«‚÷ğ‚ÄR­A¸|‹§Œ£×Nßù" },
 	{ "zhuang",L"ŞÊŠÏÑb×±×°×®áŠy—[»’˜¶‰öœ³Çf×¯¼P" }
 };
+
+
